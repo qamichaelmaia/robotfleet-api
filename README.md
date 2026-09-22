@@ -142,6 +142,8 @@ Login returns:
 
 Send `Authorization: Bearer <accessToken>` on protected endpoints. Suspended/inactive users are rejected with `403`.
 
+> 🔑 **Which email/password do I use?** See [Test Users](#test-users) below for the seeded accounts (password `Password123!` for all of them), or register your own via `POST /auth/register` (see step-by-step below).
+
 ### Step-by-step: authenticating via Swagger UI
 
 Use this flow on either `http://localhost:3000/docs` or the [live demo](#live-demo-render):
@@ -163,19 +165,21 @@ Use this flow on either `http://localhost:3000/docs` or the [live demo](#live-de
 
 ## Swagger
 
-Interactive documentation, including "Authorize" (bearer token) support, is available at **`/docs`**. The machine-readable spec is exported to [docs/openapi.yaml](docs/openapi.yaml) via `npm run openapi:export`.
+Interactive documentation, including "Authorize" (bearer token) support, is available at **`/docs`**. A Portuguese-translated copy (title/description/tags; endpoint names and schemas stay in English, as is standard practice) is available at **`/docs/pt`**. The machine-readable spec is exported to [docs/openapi.yaml](docs/openapi.yaml) via `npm run openapi:export`.
 
 ## Test Users
 
 Seeded via `npm run prisma:seed` (password for all: `Password123!`):
 
-| Email | Role | Status |
-|---|---|---|
-| admin@robotfleet.dev | ADMIN | ACTIVE |
-| manager@robotfleet.dev | MANAGER | ACTIVE |
-| operator@robotfleet.dev | OPERATOR | ACTIVE |
-| viewer@robotfleet.dev | VIEWER | ACTIVE |
-| suspended@robotfleet.dev | OPERATOR | SUSPENDED |
+| Email | Password | Role | Status |
+|---|---|---|---|
+| admin@robotfleet.dev | Password123! | ADMIN | ACTIVE |
+| manager@robotfleet.dev | Password123! | MANAGER | ACTIVE |
+| operator@robotfleet.dev | Password123! | OPERATOR | ACTIVE |
+| viewer@robotfleet.dev | Password123! | VIEWER | ACTIVE |
+| suspended@robotfleet.dev | Password123! | OPERATOR | SUSPENDED (login must fail with 403) |
+
+These only exist after running `npm run prisma:seed` against the target database (local, Docker, or the Render Shell for the [live demo](#live-demo-render)).
 
 ## API Resources
 
