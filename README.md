@@ -86,6 +86,23 @@ docker compose up -d
 
 This starts PostgreSQL and the API, running migrations and seeding automatically. The API will be available at `http://localhost:3000`.
 
+## Live Demo (Render)
+
+A hosted instance runs on [Render](https://render.com) using the [render.yaml](render.yaml) blueprint (Docker web service + free PostgreSQL):
+
+- API base URL: `https://robot-fleet-api.onrender.com`
+- Swagger UI: **https://robot-fleet-api.onrender.com/docs**
+- Health check: https://robot-fleet-api.onrender.com/health
+
+Notes on the free plan:
+- The instance sleeps after ~15 minutes of inactivity; the first request afterward can take 30-50s to wake up.
+- Migrations run automatically on container start (`npx prisma migrate deploy`), but the demo seed (`npm run prisma:seed`) is **not** run automatically on every deploy, to avoid resetting data. Run it once via the Render Shell tab if you need the seeded test users on the hosted instance:
+  ```bash
+  npm run prisma:seed
+  ```
+
+To redeploy: push to `main` — Render auto-builds from the Dockerfile. See [render.yaml](render.yaml) for the full service/database blueprint and environment variables.
+
 ## Environment Variables
 
 See [.env.example](.env.example):
@@ -124,6 +141,25 @@ Login returns:
 ```
 
 Send `Authorization: Bearer <accessToken>` on protected endpoints. Suspended/inactive users are rejected with `403`.
+
+### Step-by-step: authenticating via Swagger UI
+
+Use this flow on either `http://localhost:3000/docs` or the [live demo](#live-demo-render):
+
+1. Open **`/docs`** in your browser.
+2. Expand **`POST /api/v1/auth/register`** → click **"Try it out"** → replace the body with:
+   ```json
+   { "name": "Your Name", "email": "you@example.com", "password": "YourStrongPass123!" }
+   ```
+   → click **"Execute"**. Expect **`201 Created`** (new users always get the `VIEWER` role).
+   - Alternatively, skip this step and use one of the [seeded test users](#test-users) if the database has been seeded.
+3. Expand **`POST /api/v1/auth/login`** → "Try it out" → same `email`/`password` → **Execute**. Expect **`200 OK`** with an `accessToken`, `refreshToken` and `expiresIn`.
+4. Copy the **`accessToken`** value (without quotes).
+5. Click the **"Authorize"** button at the top of the page (padlock icon).
+6. Paste the token into the `bearerAuth` field → click **"Authorize"** → **"Close"**.
+7. All protected endpoints (shown with a closed padlock 🔒) now automatically send `Authorization: Bearer <token>` when you click "Execute".
+
+> A self-registered user only has the `VIEWER` role (read-only). To exercise write operations (create robots, jobs, etc.) log in with a seeded `ADMIN`/`MANAGER`/`OPERATOR` user instead (see [Test Users](#test-users)), or have an `ADMIN` promote your account via `PATCH /api/v1/users/{id}`.
 
 ## Swagger
 
