@@ -42,7 +42,7 @@ services:
     ports:
       - '3000:3000'
     command: >
-      sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/server.js"
+      sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/src/server.js"
 
   # Reserved for future evolution (V4 Event Contracts / resilience testing).
   # rabbitmq:
