@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "Robot Fleet API",
+    "description": "Public API for QA engineers to practice API testing, automation, contract testing, performance testing and security testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "accessToken", "value": "" },
+    { "key": "robotId", "value": "" },
+    { "key": "jobId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@robotfleet.dev\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get current user (me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Robots",
+      "item": [
+        {
+          "name": "List robots",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/robots?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Create robot",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('robotId', body.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/robots",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serialNumber\": \"POSTMAN-001\",\n  \"name\": \"Postman Bot\",\n  \"model\": \"RX-200\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Activate robot",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/robots/{{robotId}}/activate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "Create job",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('jobId', body.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/jobs",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman job\"\n}" }
+          }
+        },
+        {
+          "name": "Assign job to robot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/jobs/{{jobId}}/assign",
+            "body": { "mode": "raw", "raw": "{\n  \"robotId\": \"{{robotId}}\"\n}" }
+          }
+        },
+        {
+          "name": "Complete job (idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "url": "{{baseUrl}}/jobs/{{jobId}}/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "QA Scenarios",
+      "item": [
+        { "name": "Health (lab)", "request": { "method": "GET", "url": "{{baseUrl}}/qa-scenarios/health" } },
+        { "name": "Delay (lab)", "request": { "method": "GET", "url": "{{baseUrl}}/qa-scenarios/delay?ms=1000" } },
+        { "name": "Error (lab)", "request": { "method": "GET", "url": "{{baseUrl}}/qa-scenarios/error" } },
+        { "name": "Rate limit (lab)", "request": { "method": "GET", "url": "{{baseUrl}}/qa-scenarios/rate-limit" } }
+      ]
+    }
+  ]
+}

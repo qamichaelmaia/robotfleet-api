@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: robot_fleet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/robot_fleet_test?schema=public
+      JWT_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      JWT_EXPIRES_IN: 900
+      JWT_REFRESH_EXPIRES_IN: 604800
+      CORS_ORIGIN: '*'
+      RATE_LIMIT_MAX: 1000
+      RATE_LIMIT_WINDOW: 60000
+      AUTH_RATE_LIMIT_MAX: 1000
+      AUTH_RATE_LIMIT_WINDOW: 60000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Prisma generate
+        run: npm run prisma:generate
+
+      - name: Run database migrations
+        run: npm run prisma:deploy
+
+      - name: Seed database
+        run: npm run prisma:seed
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: API tests
+        run: npm run test:api
+
+      - name: Validate OpenAPI specification
+        run: npm run openapi:export
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TeamStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RobotStatus {
+  AVAILABLE
+  ASSIGNED
+  RUNNING
+  PAUSED
+  MAINTENANCE
+  ERROR
+  OFFLINE
+  RETIRED
+}
+
+enum JobPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JobStatus {
+  CREATED
+  ASSIGNED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(OPERATOR)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  teamMemberships  TeamMember[]
+  ledTeams         Team[]         @relation("TeamLeader")
+  createdJobs      Job[]          @relation("JobCreatedBy")
+  performedMaint   Maintenance[]  @relation("MaintenancePerformedBy")
+  resolvedIncidents Incident[]    @relation("IncidentResolvedBy")
+  notifications    Notification[]
+  auditLogs        AuditLog[]     @relation("AuditActor")
+  refreshTokens    RefreshToken[]
+
+  @@index([status])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Team {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  leaderId    String?
+  leader      User?      @relation("TeamLeader", fields: [leaderId], references: [id])
+  status      TeamStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  members TeamMember[]
+  robots  Robot[]
+
+  @@index([status])
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  joinedAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Robot {
+  id           String      @id @default(uuid())
+  serialNumber String      @unique
+  name         String
+  model        String
+  status       RobotStatus @default(OFFLINE)
+  batteryLevel Int         @default(100)
+  latitude     Float?
+  longitude    Float?
+  teamId       String?
+  team         Team?       @relation(fields: [teamId], references: [id])
+  lastSeenAt   DateTime?
+  version      Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  jobs        Job[]
+  maintenance Maintenance[]
+  telemetry   Telemetry[]
+  incidents   Incident[]
+
+  @@index([status])
+  @@index([teamId])
+  @@index([model])
+}
+
+model Job {
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  priority     JobPriority @default(MEDIUM)
+  status       JobStatus   @default(CREATED)
+  robotId      String?
+  robot        Robot?      @relation(fields: [robotId], references: [id])
+  createdBy    String
+  creator      User        @relation("JobCreatedBy", fields: [createdBy], references: [id])
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  incidents Incident[]
+
+  @@index([status])
+  @@index([robotId])
+}
+
+model Maintenance {
+  id          String            @id @default(uuid())
+  robotId     String
+  robot       Robot             @relation(fields: [robotId], references: [id])
+  type        MaintenanceType
+  description String?
+  status      MaintenanceStatus @default(SCHEDULED)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  performedBy String?
+  performer   User?             @relation("MaintenancePerformedBy", fields: [performedBy], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([robotId])
+  @@index([status])
+}
+
+model Telemetry {
+  id           String   @id @default(uuid())
+  robotId      String
+  robot        Robot    @relation(fields: [robotId], references: [id])
+  batteryLevel Int
+  temperature  Float
+  latitude     Float
+  longitude    Float
+  speed        Float
+  recordedAt   DateTime @default(now())
+
+  @@index([robotId, recordedAt])
+}
+
+model Incident {
+  id          String           @id @default(uuid())
+  robotId     String?
+  robot       Robot?           @relation(fields: [robotId], references: [id])
+  jobId       String?
+  job         Job?             @relation(fields: [jobId], references: [id])
+  type        String
+  severity    IncidentSeverity
+  description String
+  status      IncidentStatus   @default(OPEN)
+  createdAt   DateTime         @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  resolver    User?            @relation("IncidentResolvedBy", fields: [resolvedBy], references: [id])
+
+  @@index([status])
+  @@index([robotId])
+}
+
+model Notification {
+  id        String            @id @default(uuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  type      NotificationType  @default(INFO)
+  title     String
+  message   String
+  read      Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  readAt    DateTime?
+
+  @@index([userId, read])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  before    Json?
+  after     Json?
+  timestamp DateTime @default(now())
+  ipAddress String?
+
+  @@index([entity, entityId])
+  @@index([actorId])
+}
+
+model IdempotencyKey {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  method       String
+  path         String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+}

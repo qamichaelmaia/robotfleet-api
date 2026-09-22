@@ -1,0 +1,6534 @@
+openapi: 3.1.0
+info:
+  title: Robot Fleet API
+  description: Public API for QA engineers to practice API testing, automation,
+    contract testing, performance testing, security testing and modern backend
+    quality engineering.
+  version: 1.0.0
+  contact:
+    name: Robot Fleet API
+    url: https://github.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    def-0:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      title: PaginationMeta
+    def-1:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+        detail:
+          type: string
+        traceId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required:
+              - field
+              - message
+      required:
+        - type
+        - title
+        - status
+        - code
+        - detail
+        - traceId
+      title: ProblemDetails
+paths:
+  /health:
+    get:
+      summary: Basic health check
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    format: date-time
+                    type: string
+                required:
+                  - status
+                  - version
+                  - timestamp
+  /health/live:
+    get:
+      summary: Liveness probe
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    format: date-time
+                    type: string
+                required:
+                  - status
+                  - version
+                  - timestamp
+  /health/ready:
+    get:
+      summary: Readiness probe (verifies database connectivity)
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    format: date-time
+                    type: string
+                required:
+                  - status
+                  - version
+                  - timestamp
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user account
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                email:
+                  format: email
+                  type: string
+                password:
+                  minLength: 8
+                  maxLength: 72
+                  type: string
+              required:
+                - name
+                - email
+                - password
+        required: true
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate and obtain access/refresh tokens
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  format: email
+                  type: string
+                password:
+                  minLength: 1
+                  type: string
+              required:
+                - email
+                - password
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+                required:
+                  - accessToken
+                  - refreshToken
+                  - expiresIn
+  /api/v1/auth/refresh:
+    post:
+      summary: Exchange a refresh token for a new token pair
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+                required:
+                  - accessToken
+                  - refreshToken
+                  - expiresIn
+  /api/v1/auth/logout:
+    post:
+      summary: Revoke a refresh token
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+        required: true
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/auth/me:
+    get:
+      summary: Get the currently authenticated user
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+  /api/v1/users/:
+    get:
+      summary: List users
+      tags:
+        - Users
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - ACTIVE
+              - type: string
+                enum:
+                  - INACTIVE
+              - type: string
+                enum:
+                  - SUSPENDED
+          in: query
+          name: status
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - ADMIN
+              - type: string
+                enum:
+                  - MANAGER
+              - type: string
+                enum:
+                  - OPERATOR
+              - type: string
+                enum:
+                  - VIEWER
+          in: query
+          name: role
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: search
+          required: false
+        - schema:
+            default: createdAt
+            type: string
+          in: query
+          name: sort
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          format: email
+                          type: string
+                        role:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - ADMIN
+                            - type: string
+                              enum:
+                                - MANAGER
+                            - type: string
+                              enum:
+                                - OPERATOR
+                            - type: string
+                              enum:
+                                - VIEWER
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - ACTIVE
+                            - type: string
+                              enum:
+                                - INACTIVE
+                            - type: string
+                              enum:
+                                - SUSPENDED
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - email
+                        - role
+                        - status
+                        - createdAt
+                        - updatedAt
+                      title: User
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Create a user
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                email:
+                  format: email
+                  type: string
+                password:
+                  minLength: 8
+                  maxLength: 72
+                  type: string
+                role:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ADMIN
+                    - type: string
+                      enum:
+                        - MANAGER
+                    - type: string
+                      enum:
+                        - OPERATOR
+                    - type: string
+                      enum:
+                        - VIEWER
+              required:
+                - name
+                - email
+                - password
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+  /api/v1/users/{id}:
+    get:
+      summary: Get a user by id
+      tags:
+        - Users
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+    put:
+      summary: Replace a user
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                email:
+                  format: email
+                  type: string
+                role:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ADMIN
+                    - type: string
+                      enum:
+                        - MANAGER
+                    - type: string
+                      enum:
+                        - OPERATOR
+                    - type: string
+                      enum:
+                        - VIEWER
+                status:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ACTIVE
+                    - type: string
+                      enum:
+                        - INACTIVE
+                    - type: string
+                      enum:
+                        - SUSPENDED
+              required:
+                - name
+                - email
+                - role
+                - status
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+    patch:
+      summary: Partially update a user
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                email:
+                  format: email
+                  type: string
+                role:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ADMIN
+                    - type: string
+                      enum:
+                        - MANAGER
+                    - type: string
+                      enum:
+                        - OPERATOR
+                    - type: string
+                      enum:
+                        - VIEWER
+                status:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ACTIVE
+                    - type: string
+                      enum:
+                        - INACTIVE
+                    - type: string
+                      enum:
+                        - SUSPENDED
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    format: email
+                    type: string
+                  role:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ADMIN
+                      - type: string
+                        enum:
+                          - MANAGER
+                      - type: string
+                        enum:
+                          - OPERATOR
+                      - type: string
+                        enum:
+                          - VIEWER
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                      - type: string
+                        enum:
+                          - SUSPENDED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - status
+                  - createdAt
+                  - updatedAt
+    delete:
+      summary: Delete a user
+      tags:
+        - Users
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/teams/:
+    get:
+      summary: List teams
+      tags:
+        - Teams
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - ACTIVE
+              - type: string
+                enum:
+                  - INACTIVE
+          in: query
+          name: status
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: search
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        leaderId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - ACTIVE
+                            - type: string
+                              enum:
+                                - INACTIVE
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - description
+                        - leaderId
+                        - status
+                        - createdAt
+                        - updatedAt
+                      title: Team
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Create a team
+      tags:
+        - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                description:
+                  type: string
+                leaderId:
+                  format: uuid
+                  type: string
+              required:
+                - name
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  leaderId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - leaderId
+                  - status
+                  - createdAt
+                  - updatedAt
+  /api/v1/teams/{id}:
+    get:
+      summary: Get a team by id
+      tags:
+        - Teams
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  leaderId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - leaderId
+                  - status
+                  - createdAt
+                  - updatedAt
+    put:
+      summary: Replace a team
+      tags:
+        - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                description:
+                  type: string
+                leaderId:
+                  format: uuid
+                  type: string
+                status:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ACTIVE
+                    - type: string
+                      enum:
+                        - INACTIVE
+              required:
+                - name
+                - status
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  leaderId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - leaderId
+                  - status
+                  - createdAt
+                  - updatedAt
+    patch:
+      summary: Partially update a team
+      tags:
+        - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 2
+                  maxLength: 120
+                  type: string
+                description:
+                  type: string
+                leaderId:
+                  format: uuid
+                  type: string
+                status:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - ACTIVE
+                    - type: string
+                      enum:
+                        - INACTIVE
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  leaderId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - ACTIVE
+                      - type: string
+                        enum:
+                          - INACTIVE
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - leaderId
+                  - status
+                  - createdAt
+                  - updatedAt
+    delete:
+      summary: Delete a team
+      tags:
+        - Teams
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/teams/{id}/members:
+    get:
+      summary: List team members
+      tags:
+        - Teams
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          format: email
+                          type: string
+                        role:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - ADMIN
+                            - type: string
+                              enum:
+                                - MANAGER
+                            - type: string
+                              enum:
+                                - OPERATOR
+                            - type: string
+                              enum:
+                                - VIEWER
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - ACTIVE
+                            - type: string
+                              enum:
+                                - INACTIVE
+                            - type: string
+                              enum:
+                                - SUSPENDED
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - email
+                        - role
+                        - status
+                        - createdAt
+                        - updatedAt
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Add a member to a team
+      tags:
+        - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  format: uuid
+                  type: string
+              required:
+                - userId
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teamId:
+                    type: string
+                  userId:
+                    type: string
+                required:
+                  - teamId
+                  - userId
+  /api/v1/teams/{id}/members/{userId}:
+    delete:
+      summary: Remove a member from a team
+      tags:
+        - Teams
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: userId
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/robots/:
+    get:
+      summary: List robots
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - AVAILABLE
+              - type: string
+                enum:
+                  - ASSIGNED
+              - type: string
+                enum:
+                  - RUNNING
+              - type: string
+                enum:
+                  - PAUSED
+              - type: string
+                enum:
+                  - MAINTENANCE
+              - type: string
+                enum:
+                  - ERROR
+              - type: string
+                enum:
+                  - OFFLINE
+              - type: string
+                enum:
+                  - RETIRED
+          in: query
+          name: status
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: query
+          name: teamId
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: model
+          required: false
+        - schema:
+            minimum: 0
+            maximum: 100
+            type: integer
+          in: query
+          name: minBattery
+          required: false
+        - schema:
+            minimum: 0
+            maximum: 100
+            type: integer
+          in: query
+          name: maxBattery
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        serialNumber:
+                          type: string
+                        name:
+                          type: string
+                        model:
+                          type: string
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - AVAILABLE
+                            - type: string
+                              enum:
+                                - ASSIGNED
+                            - type: string
+                              enum:
+                                - RUNNING
+                            - type: string
+                              enum:
+                                - PAUSED
+                            - type: string
+                              enum:
+                                - MAINTENANCE
+                            - type: string
+                              enum:
+                                - ERROR
+                            - type: string
+                              enum:
+                                - OFFLINE
+                            - type: string
+                              enum:
+                                - RETIRED
+                        batteryLevel:
+                          minimum: 0
+                          maximum: 100
+                          type: integer
+                        latitude:
+                          anyOf:
+                            - type: number
+                            - type: "null"
+                        longitude:
+                          anyOf:
+                            - type: number
+                            - type: "null"
+                        teamId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        lastSeenAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - serialNumber
+                        - name
+                        - model
+                        - status
+                        - batteryLevel
+                        - latitude
+                        - longitude
+                        - teamId
+                        - lastSeenAt
+                        - createdAt
+                        - updatedAt
+                      title: Robot
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Register a new robot
+      tags:
+        - Robots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serialNumber:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                model:
+                  minLength: 1
+                  type: string
+                teamId:
+                  format: uuid
+                  type: string
+                batteryLevel:
+                  minimum: 0
+                  maximum: 100
+                  type: integer
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+              required:
+                - serialNumber
+                - name
+                - model
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}:
+    get:
+      summary: Get a robot by id
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+    put:
+      summary: Replace a robot
+      tags:
+        - Robots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 1
+                  type: string
+                model:
+                  minLength: 1
+                  type: string
+                teamId:
+                  format: uuid
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+              required:
+                - name
+                - model
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+    patch:
+      summary: Partially update a robot
+      tags:
+        - Robots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  minLength: 1
+                  type: string
+                model:
+                  minLength: 1
+                  type: string
+                teamId:
+                  format: uuid
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+    delete:
+      summary: Delete a robot
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/robots/{id}/activate:
+    post:
+      summary: Activate a robot (OFFLINE -> AVAILABLE)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/deactivate:
+    post:
+      summary: Deactivate a robot (AVAILABLE -> OFFLINE)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/start:
+    post:
+      summary: Start a robot job execution (ASSIGNED -> RUNNING)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/pause:
+    post:
+      summary: Pause a running robot (RUNNING -> PAUSED)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/resume:
+    post:
+      summary: Resume a paused robot (PAUSED -> RUNNING)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/shutdown:
+    post:
+      summary: Shut down a running robot (RUNNING -> AVAILABLE)
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/retire:
+    post:
+      summary: Retire a robot permanently
+      tags:
+        - Robots
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  serialNumber:
+                    type: string
+                  name:
+                    type: string
+                  model:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - AVAILABLE
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - MAINTENANCE
+                      - type: string
+                        enum:
+                          - ERROR
+                      - type: string
+                        enum:
+                          - OFFLINE
+                      - type: string
+                        enum:
+                          - RETIRED
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  latitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  longitude:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                  teamId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  lastSeenAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - serialNumber
+                  - name
+                  - model
+                  - status
+                  - batteryLevel
+                  - latitude
+                  - longitude
+                  - teamId
+                  - lastSeenAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/:
+    get:
+      summary: List jobs
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - CREATED
+              - type: string
+                enum:
+                  - ASSIGNED
+              - type: string
+                enum:
+                  - RUNNING
+              - type: string
+                enum:
+                  - PAUSED
+              - type: string
+                enum:
+                  - COMPLETED
+              - type: string
+                enum:
+                  - FAILED
+              - type: string
+                enum:
+                  - CANCELLED
+          in: query
+          name: status
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - LOW
+              - type: string
+                enum:
+                  - MEDIUM
+              - type: string
+                enum:
+                  - HIGH
+              - type: string
+                enum:
+                  - CRITICAL
+          in: query
+          name: priority
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: query
+          name: robotId
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        title:
+                          type: string
+                        description:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        priority:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - LOW
+                            - type: string
+                              enum:
+                                - MEDIUM
+                            - type: string
+                              enum:
+                                - HIGH
+                            - type: string
+                              enum:
+                                - CRITICAL
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - CREATED
+                            - type: string
+                              enum:
+                                - ASSIGNED
+                            - type: string
+                              enum:
+                                - RUNNING
+                            - type: string
+                              enum:
+                                - PAUSED
+                            - type: string
+                              enum:
+                                - COMPLETED
+                            - type: string
+                              enum:
+                                - FAILED
+                            - type: string
+                              enum:
+                                - CANCELLED
+                        robotId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        createdBy:
+                          format: uuid
+                          type: string
+                        scheduledAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        startedAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        completedAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - title
+                        - description
+                        - priority
+                        - status
+                        - robotId
+                        - createdBy
+                        - scheduledAt
+                        - startedAt
+                        - completedAt
+                        - createdAt
+                        - updatedAt
+                      title: Job
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Create a job
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  minLength: 1
+                  type: string
+                description:
+                  type: string
+                priority:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - LOW
+                    - type: string
+                      enum:
+                        - MEDIUM
+                    - type: string
+                      enum:
+                        - HIGH
+                    - type: string
+                      enum:
+                        - CRITICAL
+                scheduledAt:
+                  format: date-time
+                  type: string
+              required:
+                - title
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}:
+    get:
+      summary: Get a job by id
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+    put:
+      summary: Replace a job
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  minLength: 1
+                  type: string
+                description:
+                  type: string
+                priority:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - LOW
+                    - type: string
+                      enum:
+                        - MEDIUM
+                    - type: string
+                      enum:
+                        - HIGH
+                    - type: string
+                      enum:
+                        - CRITICAL
+                scheduledAt:
+                  format: date-time
+                  type: string
+              required:
+                - title
+                - priority
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+    patch:
+      summary: Partially update a job
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  minLength: 1
+                  type: string
+                description:
+                  type: string
+                priority:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - LOW
+                    - type: string
+                      enum:
+                        - MEDIUM
+                    - type: string
+                      enum:
+                        - HIGH
+                    - type: string
+                      enum:
+                        - CRITICAL
+                scheduledAt:
+                  format: date-time
+                  type: string
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+    delete:
+      summary: Delete a job
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+  /api/v1/jobs/{id}/assign:
+    post:
+      summary: Assign a robot to a job (concurrency-safe)
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                robotId:
+                  format: uuid
+                  type: string
+              required:
+                - robotId
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/start:
+    post:
+      summary: Start a job (ASSIGNED -> RUNNING)
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/pause:
+    post:
+      summary: Pause a job (RUNNING -> PAUSED)
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/resume:
+    post:
+      summary: Resume a job (PAUSED -> RUNNING)
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/cancel:
+    post:
+      summary: Cancel a job
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/fail:
+    post:
+      summary: Mark a job as failed
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/jobs/{id}/complete:
+    post:
+      summary: Complete a job (supports Idempotency-Key header)
+      tags:
+        - Jobs
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+        - schema:
+            type: string
+          in: header
+          name: idempotency-key
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  priority:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - CREATED
+                      - type: string
+                        enum:
+                          - ASSIGNED
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - PAUSED
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdBy:
+                    format: uuid
+                    type: string
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - title
+                  - description
+                  - priority
+                  - status
+                  - robotId
+                  - createdBy
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - createdAt
+                  - updatedAt
+  /api/v1/maintenance/:
+    get:
+      summary: List maintenance records
+      tags:
+        - Maintenance
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - SCHEDULED
+              - type: string
+                enum:
+                  - IN_PROGRESS
+              - type: string
+                enum:
+                  - COMPLETED
+              - type: string
+                enum:
+                  - CANCELLED
+          in: query
+          name: status
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: query
+          name: robotId
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        robotId:
+                          format: uuid
+                          type: string
+                        type:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - PREVENTIVE
+                            - type: string
+                              enum:
+                                - CORRECTIVE
+                            - type: string
+                              enum:
+                                - INSPECTION
+                        description:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - SCHEDULED
+                            - type: string
+                              enum:
+                                - IN_PROGRESS
+                            - type: string
+                              enum:
+                                - COMPLETED
+                            - type: string
+                              enum:
+                                - CANCELLED
+                        scheduledAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        startedAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        completedAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        performedBy:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - robotId
+                        - type
+                        - description
+                        - status
+                        - scheduledAt
+                        - startedAt
+                        - completedAt
+                        - performedBy
+                        - createdAt
+                        - updatedAt
+                      title: Maintenance
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Schedule a maintenance record
+      tags:
+        - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                robotId:
+                  format: uuid
+                  type: string
+                type:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - PREVENTIVE
+                    - type: string
+                      enum:
+                        - CORRECTIVE
+                    - type: string
+                      enum:
+                        - INSPECTION
+                description:
+                  type: string
+                scheduledAt:
+                  format: date-time
+                  type: string
+              required:
+                - robotId
+                - type
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+  /api/v1/maintenance/{id}:
+    get:
+      summary: Get a maintenance record by id
+      tags:
+        - Maintenance
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+    put:
+      summary: Replace a maintenance record
+      tags:
+        - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - PREVENTIVE
+                    - type: string
+                      enum:
+                        - CORRECTIVE
+                    - type: string
+                      enum:
+                        - INSPECTION
+                description:
+                  type: string
+                scheduledAt:
+                  format: date-time
+                  type: string
+              required:
+                - type
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+    patch:
+      summary: Partially update a maintenance record
+      tags:
+        - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - PREVENTIVE
+                    - type: string
+                      enum:
+                        - CORRECTIVE
+                    - type: string
+                      enum:
+                        - INSPECTION
+                description:
+                  type: string
+                scheduledAt:
+                  format: date-time
+                  type: string
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+  /api/v1/maintenance/{id}/start:
+    post:
+      summary: Start a maintenance record
+      tags:
+        - Maintenance
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+  /api/v1/maintenance/{id}/complete:
+    post:
+      summary: Complete a maintenance record
+      tags:
+        - Maintenance
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+  /api/v1/maintenance/{id}/cancel:
+    post:
+      summary: Cancel a maintenance record
+      tags:
+        - Maintenance
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PREVENTIVE
+                      - type: string
+                        enum:
+                          - CORRECTIVE
+                      - type: string
+                        enum:
+                          - INSPECTION
+                  description:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - SCHEDULED
+                      - type: string
+                        enum:
+                          - IN_PROGRESS
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - CANCELLED
+                  scheduledAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  startedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  completedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  performedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  createdAt:
+                    format: date-time
+                    type: string
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - type
+                  - description
+                  - status
+                  - scheduledAt
+                  - startedAt
+                  - completedAt
+                  - performedBy
+                  - createdAt
+                  - updatedAt
+  /api/v1/robots/{id}/telemetry:
+    get:
+      summary: List telemetry records for a robot
+      tags:
+        - Telemetry
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        robotId:
+                          format: uuid
+                          type: string
+                        batteryLevel:
+                          minimum: 0
+                          maximum: 100
+                          type: integer
+                        temperature:
+                          type: number
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+                        speed:
+                          minimum: 0
+                          type: number
+                        recordedAt:
+                          format: date-time
+                          type: string
+                      required:
+                        - id
+                        - robotId
+                        - batteryLevel
+                        - temperature
+                        - latitude
+                        - longitude
+                        - speed
+                        - recordedAt
+                      title: Telemetry
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Record a telemetry reading for a robot (append-only)
+      tags:
+        - Telemetry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                batteryLevel:
+                  minimum: 0
+                  maximum: 100
+                  type: integer
+                temperature:
+                  minimum: -50
+                  maximum: 150
+                  type: number
+                latitude:
+                  minimum: -90
+                  maximum: 90
+                  type: number
+                longitude:
+                  minimum: -180
+                  maximum: 180
+                  type: number
+                speed:
+                  minimum: 0
+                  maximum: 50
+                  type: number
+                recordedAt:
+                  format: date-time
+                  type: string
+              required:
+                - batteryLevel
+                - temperature
+                - latitude
+                - longitude
+                - speed
+        required: true
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  temperature:
+                    type: number
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  speed:
+                    minimum: 0
+                    type: number
+                  recordedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - batteryLevel
+                  - temperature
+                  - latitude
+                  - longitude
+                  - speed
+                  - recordedAt
+  /api/v1/telemetry/{id}:
+    get:
+      summary: Get a telemetry record by id
+      tags:
+        - Telemetry
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    format: uuid
+                    type: string
+                  batteryLevel:
+                    minimum: 0
+                    maximum: 100
+                    type: integer
+                  temperature:
+                    type: number
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  speed:
+                    minimum: 0
+                    type: number
+                  recordedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - robotId
+                  - batteryLevel
+                  - temperature
+                  - latitude
+                  - longitude
+                  - speed
+                  - recordedAt
+  /api/v1/incidents/:
+    get:
+      summary: List incidents
+      tags:
+        - Incidents
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - OPEN
+              - type: string
+                enum:
+                  - INVESTIGATING
+              - type: string
+                enum:
+                  - RESOLVED
+              - type: string
+                enum:
+                  - CLOSED
+          in: query
+          name: status
+          required: false
+        - schema:
+            anyOf:
+              - type: string
+                enum:
+                  - LOW
+              - type: string
+                enum:
+                  - MEDIUM
+              - type: string
+                enum:
+                  - HIGH
+              - type: string
+                enum:
+                  - CRITICAL
+          in: query
+          name: severity
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: query
+          name: robotId
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        robotId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        jobId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        type:
+                          type: string
+                        severity:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - LOW
+                            - type: string
+                              enum:
+                                - MEDIUM
+                            - type: string
+                              enum:
+                                - HIGH
+                            - type: string
+                              enum:
+                                - CRITICAL
+                        description:
+                          type: string
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - OPEN
+                            - type: string
+                              enum:
+                                - INVESTIGATING
+                            - type: string
+                              enum:
+                                - RESOLVED
+                            - type: string
+                              enum:
+                                - CLOSED
+                        createdAt:
+                          format: date-time
+                          type: string
+                        resolvedAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                        resolvedBy:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                      required:
+                        - id
+                        - robotId
+                        - jobId
+                        - type
+                        - severity
+                        - description
+                        - status
+                        - createdAt
+                        - resolvedAt
+                        - resolvedBy
+                      title: Incident
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+    post:
+      summary: Report an incident
+      tags:
+        - Incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                robotId:
+                  format: uuid
+                  type: string
+                jobId:
+                  format: uuid
+                  type: string
+                type:
+                  minLength: 1
+                  type: string
+                severity:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - LOW
+                    - type: string
+                      enum:
+                        - MEDIUM
+                    - type: string
+                      enum:
+                        - HIGH
+                    - type: string
+                      enum:
+                        - CRITICAL
+                description:
+                  minLength: 1
+                  type: string
+              required:
+                - type
+                - severity
+                - description
+        required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+  /api/v1/incidents/{id}:
+    get:
+      summary: Get an incident by id
+      tags:
+        - Incidents
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+    patch:
+      summary: Partially update an incident
+      tags:
+        - Incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  minLength: 1
+                  type: string
+                description:
+                  minLength: 1
+                  type: string
+                severity:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - LOW
+                    - type: string
+                      enum:
+                        - MEDIUM
+                    - type: string
+                      enum:
+                        - HIGH
+                    - type: string
+                      enum:
+                        - CRITICAL
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+  /api/v1/incidents/{id}/investigate:
+    post:
+      summary: Move an incident to INVESTIGATING
+      tags:
+        - Incidents
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+  /api/v1/incidents/{id}/resolve:
+    post:
+      summary: Resolve an incident
+      tags:
+        - Incidents
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+  /api/v1/incidents/{id}/close:
+    post:
+      summary: Close a resolved incident
+      tags:
+        - Incidents
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  robotId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  jobId:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                  type:
+                    type: string
+                  severity:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - LOW
+                      - type: string
+                        enum:
+                          - MEDIUM
+                      - type: string
+                        enum:
+                          - HIGH
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  description:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - OPEN
+                      - type: string
+                        enum:
+                          - INVESTIGATING
+                      - type: string
+                        enum:
+                          - RESOLVED
+                      - type: string
+                        enum:
+                          - CLOSED
+                  createdAt:
+                    format: date-time
+                    type: string
+                  resolvedAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                  resolvedBy:
+                    anyOf:
+                      - format: uuid
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - robotId
+                  - jobId
+                  - type
+                  - severity
+                  - description
+                  - status
+                  - createdAt
+                  - resolvedAt
+                  - resolvedBy
+  /api/v1/notifications/:
+    get:
+      summary: List the current user's notifications
+      tags:
+        - Notifications
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            type: boolean
+          in: query
+          name: read
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        userId:
+                          format: uuid
+                          type: string
+                        type:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - INFO
+                            - type: string
+                              enum:
+                                - WARNING
+                            - type: string
+                              enum:
+                                - CRITICAL
+                        title:
+                          type: string
+                        message:
+                          type: string
+                        read:
+                          type: boolean
+                        createdAt:
+                          format: date-time
+                          type: string
+                        readAt:
+                          anyOf:
+                            - format: date-time
+                              type: string
+                            - type: "null"
+                      required:
+                        - id
+                        - userId
+                        - type
+                        - title
+                        - message
+                        - read
+                        - createdAt
+                        - readAt
+                      title: Notification
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+  /api/v1/notifications/{id}/read:
+    patch:
+      summary: Mark a notification as read
+      tags:
+        - Notifications
+      parameters:
+        - schema:
+            format: uuid
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                  userId:
+                    format: uuid
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - INFO
+                      - type: string
+                        enum:
+                          - WARNING
+                      - type: string
+                        enum:
+                          - CRITICAL
+                  title:
+                    type: string
+                  message:
+                    type: string
+                  read:
+                    type: boolean
+                  createdAt:
+                    format: date-time
+                    type: string
+                  readAt:
+                    anyOf:
+                      - format: date-time
+                        type: string
+                      - type: "null"
+                required:
+                  - id
+                  - userId
+                  - type
+                  - title
+                  - message
+                  - read
+                  - createdAt
+                  - readAt
+  /api/v1/audit-logs/:
+    get:
+      summary: List audit logs (admin only, read-only)
+      tags:
+        - Audit
+      parameters:
+        - schema:
+            minimum: 1
+            default: 1
+            type: integer
+          in: query
+          name: page
+          required: false
+        - schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+          in: query
+          name: limit
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: entity
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: entityId
+          required: false
+        - schema:
+            format: uuid
+            type: string
+          in: query
+          name: actorId
+          required: false
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          format: uuid
+                          type: string
+                        actorId:
+                          anyOf:
+                            - format: uuid
+                              type: string
+                            - type: "null"
+                        action:
+                          type: string
+                        entity:
+                          type: string
+                        entityId:
+                          type: string
+                        before: {}
+                        after: {}
+                        timestamp:
+                          format: date-time
+                          type: string
+                        ipAddress:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                      required:
+                        - id
+                        - actorId
+                        - action
+                        - entity
+                        - entityId
+                        - timestamp
+                        - ipAddress
+                      title: AuditLog
+                  pagination:
+                    $ref: "#/components/schemas/def-0"
+                required:
+                  - data
+                  - pagination
+  /api/v1/qa-scenarios/health:
+    get:
+      summary: "[Lab] Always returns a healthy response"
+      tags:
+        - QA Scenarios
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                required:
+                  - status
+  /api/v1/qa-scenarios/delay:
+    get:
+      summary: "[Lab] Simulates a slow response"
+      tags:
+        - QA Scenarios
+      parameters:
+        - schema:
+            minimum: 0
+            maximum: 10000
+            default: 2000
+            type: integer
+          in: query
+          name: ms
+          required: false
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  delayedMs:
+                    type: integer
+                required:
+                  - delayedMs
+  /api/v1/qa-scenarios/error:
+    get:
+      summary: "[Lab] Simulates a 500 Internal Server Error"
+      tags:
+        - QA Scenarios
+      responses:
+        "500":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: integer
+                  code:
+                    type: string
+                  detail:
+                    type: string
+                  traceId:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - code
+                  - detail
+                  - traceId
+  /api/v1/qa-scenarios/rate-limit:
+    get:
+      summary: "[Lab] Enforces a strict rate limit (3 requests per minute) to practice
+        429 handling"
+      tags:
+        - QA Scenarios
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                required:
+                  - status
+  /api/v1/qa-scenarios/large-payload:
+    get:
+      summary: "[Lab] Returns a large payload to practice performance/pagination
+        handling"
+      tags:
+        - QA Scenarios
+      parameters:
+        - schema:
+            minimum: 1
+            maximum: 10000
+            default: 1000
+            type: integer
+          in: query
+          name: items
+          required: false
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        value:
+                          type: string
+                      required:
+                        - index
+                        - value
+                required:
+                  - data
+servers:
+  - url: /
+    description: Current server
+tags:
+  - name: Auth
+    description: Registration, login and session management
+  - name: Users
+    description: User account management
+  - name: Teams
+    description: Teams and team membership
+  - name: Robots
+    description: Robot fleet management and operational commands
+  - name: Jobs
+    description: Operational jobs executed by robots
+  - name: Maintenance
+    description: Preventive, corrective and inspection maintenance
+  - name: Telemetry
+    description: Append-only robot telemetry readings
+  - name: Incidents
+    description: Operational incidents and their lifecycle
+  - name: Notifications
+    description: User notifications
+  - name: Audit
+    description: Immutable audit trail (read-only)
+  - name: Health
+    description: Health, liveness and readiness probes
+  - name: QA Scenarios
+    description: Laboratory endpoints for QA training (delay/error/rate-limit)
